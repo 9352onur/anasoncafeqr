@@ -86,12 +86,12 @@
         state.currencySymbols = configRes.currencySymbols;
       }
 
-      // Restore stored Theme
+      // Restore stored Theme (Always Dark Lounge by default)
       const savedTheme = localStorage.getItem('anason_theme');
       if (savedTheme && ['dark', 'light'].includes(savedTheme)) {
         state.currentTheme = savedTheme;
-      } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
-        state.currentTheme = 'light';
+      } else {
+        state.currentTheme = 'dark';
       }
       applyTheme(state.currentTheme);
 
