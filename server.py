@@ -25,6 +25,88 @@ MENU_FILE = os.path.join(DATA_DIR, "menu.json")
 CONFIG_FILE = os.path.join(DATA_DIR, "config.json")
 TRANSLATIONS_FILE = os.path.join(DATA_DIR, "translations.json")
 
+# PostgreSQL Database Integration (Prisma / Vercel Postgres)
+DB_URL = (
+    os.environ.get("DATABASE_URL_POOLED")
+    or os.environ.get("DATABASE_URL")
+    or os.environ.get("POSTGRES_URL")
+    or os.environ.get("PRISMA_DATABASE_URL")
+    or "postgres://fe82ebf21d8bd52874a7ba220403430d0edf2e2071988eec01d9a8f2ca38d831:sk_ZAeOWLan2V1B-w92KBbKT@pooled.db.prisma.io:5432/postgres?sslmode=require"
+)
+
+def get_db_connection():
+    if not DB_URL:
+        return None
+    try:
+        import psycopg2
+        conn = psycopg2.connect(DB_URL, connect_timeout=5)
+        conn.autocommit = True
+        return conn
+    except Exception as e:
+        print(f"PostgreSQL connection error: {e}")
+        return None
+
+def load_local_json(filepath: str) -> dict:
+    if os.environ.get("VERCEL"):
+        tmp_dir = "/tmp/data"
+        os.makedirs(tmp_dir, exist_ok=True)
+        fname = os.path.basename(filepath)
+        tmp_path = os.path.join(tmp_dir, fname)
+        if os.path.exists(tmp_path):
+            with open(tmp_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+    if os.path.exists(filepath):
+        with open(filepath, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return {}
+
+def save_local_json(filepath: str, data: dict):
+    target = filepath
+    if os.environ.get("VERCEL"):
+        tmp_dir = "/tmp/data"
+        os.makedirs(tmp_dir, exist_ok=True)
+        fname = os.path.basename(filepath)
+        target = os.path.join(tmp_dir, fname)
+    with open(target, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+def get_store(key: str, default_filepath: str) -> dict:
+    conn = get_db_connection()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT data FROM cafe_store WHERE key = %s;", (key,))
+                row = cur.fetchone()
+                if row and row[0]:
+                    val = row[0]
+                    return val if isinstance(val, dict) else json.loads(val)
+        except Exception as e:
+            print(f"Error reading {key} from DB: {e}")
+        finally:
+            conn.close()
+    return load_local_json(default_filepath)
+
+def set_store(key: str, data: dict, default_filepath: str):
+    # Update local file as cache/backup
+    try:
+        save_local_json(default_filepath, data)
+    except Exception:
+        pass
+
+    conn = get_db_connection()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                INSERT INTO cafe_store (key, data, updated_at)
+                VALUES (%s, %s, CURRENT_TIMESTAMP)
+                ON CONFLICT (key) DO UPDATE SET data = EXCLUDED.data, updated_at = CURRENT_TIMESTAMP;
+                """, (key, json.dumps(data, ensure_ascii=False)))
+        except Exception as e:
+            print(f"Error saving {key} to DB: {e}")
+        finally:
+            conn.close()
+
 # In-memory exchange rates cache
 rates_cache = {
     "timestamp": 0,
@@ -35,28 +117,6 @@ rates_cache = {
         "GBP": 0.023
     }
 }
-
-def get_path(filepath: str, for_write: bool = False) -> str:
-    if os.environ.get("VERCEL"):
-        tmp_dir = "/tmp/data"
-        os.makedirs(tmp_dir, exist_ok=True)
-        fname = os.path.basename(filepath)
-        tmp_path = os.path.join(tmp_dir, fname)
-        if not os.path.exists(tmp_path) and os.path.exists(filepath):
-            import shutil
-            shutil.copyfile(filepath, tmp_path)
-        return tmp_path
-    return filepath
-
-def load_json(filepath: str) -> dict:
-    target = get_path(filepath, for_write=False)
-    with open(target, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-def save_json(filepath: str, data: dict):
-    target = get_path(filepath, for_write=True)
-    with open(target, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
 
 class MenuItem(BaseModel):
     id: Optional[str] = None
@@ -94,15 +154,15 @@ class DeleteItemPayload(BaseModel):
 # API Routes
 @app.get("/api/config")
 def get_config():
-    return load_json(CONFIG_FILE)
+    return get_store("config", CONFIG_FILE)
 
 @app.get("/api/translations")
 def get_translations():
-    return load_json(TRANSLATIONS_FILE)
+    return get_store("translations", TRANSLATIONS_FILE)
 
 @app.get("/api/menu")
 def get_menu():
-    return load_json(MENU_FILE)
+    return get_store("menu", MENU_FILE)
 
 @app.get("/api/rates")
 def get_rates():
@@ -151,33 +211,33 @@ def get_rates():
 # Admin Routes
 @app.post("/api/admin/verify-pin")
 def verify_pin(data: PinVerify):
-    config = load_json(CONFIG_FILE)
-    if data.pin == config.get("adminPin", "1923"):
+    config = get_store("config", CONFIG_FILE)
+    if data.pin == config.get("adminPin", "9352"):
         return {"status": "ok", "message": "PIN verified successfully"}
     raise HTTPException(status_code=401, detail="Geçersiz PIN Kodu!")
 
 @app.post("/api/admin/change-pin")
 def change_pin(data: PinChange):
-    config = load_json(CONFIG_FILE)
-    if data.old_pin != config.get("adminPin", "1923"):
+    config = get_store("config", CONFIG_FILE)
+    if data.old_pin != config.get("adminPin", "9352"):
         raise HTTPException(status_code=401, detail="Mevcut PIN hatalı!")
     if len(data.new_pin) < 4:
         raise HTTPException(status_code=400, detail="Yeni PIN en az 4 basamaklı olmalıdır!")
     
     config["adminPin"] = data.new_pin
-    save_json(CONFIG_FILE, config)
+    set_store("config", config, CONFIG_FILE)
     return {"status": "ok", "message": "PIN başarıyla güncellendi!"}
 
 @app.post("/api/admin/item")
 def add_item(payload: ItemActionPayload):
-    config = load_json(CONFIG_FILE)
-    if payload.pin != config.get("adminPin", "1923"):
+    config = get_store("config", CONFIG_FILE)
+    if payload.pin != config.get("adminPin", "9352"):
         raise HTTPException(status_code=401, detail="Yetkisiz erişim")
     
     if not payload.item:
         raise HTTPException(status_code=400, detail="Ürün bilgisi eksik")
 
-    menu = load_json(MENU_FILE)
+    menu = get_store("menu", MENU_FILE)
     new_id = f"custom-{int(time.time()*1000)}"
     item_dict = payload.item.dict()
     item_dict["id"] = new_id
@@ -185,19 +245,19 @@ def add_item(payload: ItemActionPayload):
         item_dict["image"] = "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80"
     
     menu["items"].append(item_dict)
-    save_json(MENU_FILE, menu)
+    set_store("menu", menu, MENU_FILE)
     return {"status": "ok", "item": item_dict}
 
 @app.put("/api/admin/item/{item_id}")
 def update_item(item_id: str, payload: ItemActionPayload):
-    config = load_json(CONFIG_FILE)
-    if payload.pin != config.get("adminPin", "1923"):
+    config = get_store("config", CONFIG_FILE)
+    if payload.pin != config.get("adminPin", "9352"):
         raise HTTPException(status_code=401, detail="Yetkisiz erişim")
     
     if not payload.item:
         raise HTTPException(status_code=400, detail="Ürün bilgisi eksik")
 
-    menu = load_json(MENU_FILE)
+    menu = get_store("menu", MENU_FILE)
     found = False
     for i, it in enumerate(menu["items"]):
         if it["id"] == item_id:
@@ -210,23 +270,23 @@ def update_item(item_id: str, payload: ItemActionPayload):
     if not found:
         raise HTTPException(status_code=404, detail="Ürün bulunamadı")
         
-    save_json(MENU_FILE, menu)
+    set_store("menu", menu, MENU_FILE)
     return {"status": "ok", "message": "Ürün güncellendi"}
 
 @app.delete("/api/admin/item/{item_id}")
 def delete_item(item_id: str, payload: DeleteItemPayload):
-    config = load_json(CONFIG_FILE)
-    if payload.pin != config.get("adminPin", "1923"):
+    config = get_store("config", CONFIG_FILE)
+    if payload.pin != config.get("adminPin", "9352"):
         raise HTTPException(status_code=401, detail="Yetkisiz erişim")
         
-    menu = load_json(MENU_FILE)
+    menu = get_store("menu", MENU_FILE)
     orig_len = len(menu["items"])
     menu["items"] = [it for it in menu["items"] if it["id"] != item_id]
     
     if len(menu["items"]) == orig_len:
         raise HTTPException(status_code=404, detail="Ürün bulunamadı")
         
-    save_json(MENU_FILE, menu)
+    set_store("menu", menu, MENU_FILE)
     return {"status": "ok", "message": "Ürün başarıyla silindi"}
 
 # Serve Frontend
