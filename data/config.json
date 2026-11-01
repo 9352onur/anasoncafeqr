@@ -1,0 +1,19 @@
+{
+  "cafeName": "Anason Cafe & Bistro",
+  "slogan": "Good Food • Good Drinks • Good Mood",
+  "location": "Fethiye • Erasta AVM Yanı",
+  "fullAddress": "Taşyaka Mah. 187. Sok. No:34 (Erasta AVM Yanı), Fethiye / Muğla",
+  "googleMapsUrl": "https://maps.google.com/?q=Anason+Caffe+Bistro+Fethiye",
+  "instagramUrl": "https://www.instagram.com/anasoncafefethiye/",
+  "googleReviewUrl": "https://www.google.com/searchviewer/10?svid=CAwSHRIbCgNwdnESFENnMHZaeTh4TVhSdGJqQXdjVGRpGAo",
+  "adminPin": "9352",
+  "defaultCurrency": "TRY",
+  "supportedCurrencies": ["TRY", "USD", "EUR", "GBP"],
+  "currencySymbols": {
+    "TRY": "₺",
+    "USD": "$",
+    "EUR": "€",
+    "GBP": "£"
+  },
+  "defaultLanguage": "tr"
+}

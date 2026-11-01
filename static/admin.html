@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anason Cafe & Bistro | Yönetim Paneli</title>
+  
+  <link rel="icon" type="image/png" href="/static/assets/logo_dark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+
+  <!-- PIN Login Overlay (Shown until authenticated) -->
+  <div id="pinOverlay" class="pin-overlay">
+    <div class="pin-card">
+      <div class="pin-logo">
+        <img src="/static/assets/logo_dark.png" alt="Anason Cafe Logo">
+      </div>
+      <h2>Yönetici Girişi</h2>
+      <p>Devam etmek için 4 haneli PIN kodunu giriniz</p>
+      
+      <form id="pinForm" class="pin-form">
+        <div class="pin-input-group">
+          <input type="password" id="pinInput" maxlength="6" placeholder="••••" autocomplete="off" autofocus required>
+        </div>
+        <button type="submit" class="btn-primary">
+          <i class="fa-solid fa-key"></i> Giriş Yap
+        </button>
+      </form>
+      <div id="pinError" class="pin-error hidden">Hatalı PIN kodu! Lütfen tekrar deneyin.</div>
+      <div class="pin-hint">Varsayılan PIN: <strong>9352</strong></div>
+      <a href="/" class="back-to-menu-link"><i class="fa-solid fa-arrow-left"></i> Menüye Geri Dön</a>
+    </div>
+  </div>
+
+  <!-- Admin Main Dashboard (Hidden until PIN confirmed) -->
+  <div id="dashboardApp" class="dashboard-wrapper hidden">
+    <!-- Sidebar / Top Nav -->
+    <header class="dash-header">
+      <div class="dash-brand">
+        <img src="/static/assets/logo_dark.png" alt="Anason Cafe Logo" class="dash-logo">
+        <div>
+          <h1>ANASON CAFE</h1>
+          <span>Menü Yönetim Paneli</span>
+        </div>
+      </div>
+      <div class="dash-actions">
+        <a href="/" target="_blank" class="btn-secondary" title="Menüyü Yeni Sekmede Aç">
+          <i class="fa-solid fa-eye"></i> Canlı Menü
+        </a>
+        <button id="logoutBtn" class="btn-logout" title="Çıkış Yap">
+          <i class="fa-solid fa-right-from-bracket"></i> Çıkış
+        </button>
+      </div>
+    </header>
+
+    <!-- Stat Bar -->
+    <section class="stat-bar">
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-utensils"></i></div>
+        <div class="stat-info">
+          <span class="stat-label">Toplam Ürün</span>
+          <span class="stat-val" id="totalItemsCount">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-wind"></i></div>
+        <div class="stat-info">
+          <span class="stat-label">Nargile Çeşitleri</span>
+          <span class="stat-val" id="hookahItemsCount">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon"><i class="fa-solid fa-dollar-sign"></i></div>
+        <div class="stat-info">
+          <span class="stat-label">Canlı Kurlar (TRY Bazlı)</span>
+          <span class="stat-val rates-text" id="liveRatesSummary">USD: ... | EUR: ...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Section Tabs -->
+    <div class="dash-tabs">
+      <button class="tab-btn active" data-tab="menuTab">
+        <i class="fa-solid fa-list-check"></i> Ürün & Fiyat Yönetimi
+      </button>
+      <button class="tab-btn" data-tab="addItemTab">
+        <i class="fa-solid fa-plus-circle"></i> Yeni Ürün Ekle
+      </button>
+      <button class="tab-btn" data-tab="qrTab">
+        <i class="fa-solid fa-qrcode"></i> Masa QR Kodları
+      </button>
+      <button class="tab-btn" data-tab="settingsTab">
+        <i class="fa-solid fa-shield-halved"></i> PIN & Güvenlik
+      </button>
+    </div>
+
+    <!-- TAB 1: Menu & Price Management -->
+    <main id="menuTab" class="tab-content active">
+      <div class="toolbar">
+        <div class="search-box">
+          <i class="fa-solid fa-search"></i>
+          <input type="text" id="adminSearchInput" placeholder="Ürün adı veya kategori ara...">
+        </div>
+        <div class="category-filter-box">
+          <select id="adminCategoryFilter">
+            <option value="all">Tüm Kategoriler</option>
+          </select>
+        </div>
+        <button id="saveAllPricesBtn" class="btn-success">
+          <i class="fa-solid fa-check-double"></i> Fiyatları Kaydet
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th width="70">Görsel</th>
+              <th>Ürün Adı</th>
+              <th>Kategori</th>
+              <th>Alt Grup</th>
+              <th width="150">Fiyat (₺)</th>
+              <th width="110">Rozet</th>
+              <th width="90">Stok</th>
+              <th width="110">İşlemler</th>
+            </tr>
+          </thead>
+          <tbody id="adminTableBody">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </main>
+
+    <!-- TAB 2: Add New Item -->
+    <section id="addItemTab" class="tab-content">
+      <div class="form-card">
+        <h3><i class="fa-solid fa-plus-circle"></i> Menüye Yeni Ürün / Nargile Ekle</h3>
+        <form id="addItemForm" class="admin-form">
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label for="newItemName">Ürün Adı (Türkçe) *</label>
+              <input type="text" id="newItemName" required placeholder="Örn: Double Cheeseburger">
+            </div>
+            <div class="form-group col-6">
+              <label for="newItemNameEn">İngilizce İsim</label>
+              <input type="text" id="newItemNameEn" placeholder="Örn: Double Cheeseburger">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-4">
+              <label for="newItemCategory">Kategori *</label>
+              <select id="newItemCategory" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group col-4">
+              <label for="newItemSubcategory">Alt Kategori / Başlık</label>
+              <input type="text" id="newItemSubcategory" placeholder="Örn: Burgerler veya İmza Karışımlar">
+            </div>
+            <div class="form-group col-4">
+              <label for="newItemPrice">Fiyat (₺)</label>
+              <input type="text" id="newItemPrice" placeholder="Örn: 240 (Boş bırakılabilir)">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-12">
+              <label for="newItemDesc">Açıklama / İçerik (Türkçe)</label>
+              <textarea id="newItemDesc" rows="2" placeholder="Ürün içeriğini, malzemeleri ve lezzet detaylarını yazın..."></textarea>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label for="newItemImage">Görsel URL (Unsplash veya Fotoğraf Bağlantısı)</label>
+              <input type="url" id="newItemImage" placeholder="https://images.unsplash.com/...">
+            </div>
+            <div class="form-group col-6">
+              <label for="newItemBadge">Öne Çıkan Rozeti</label>
+              <select id="newItemBadge">
+                <option value="">Rozet Yok</option>
+                <option value="ÖZEL">ÖZEL</option>
+                <option value="POPÜLER">POPÜLER</option>
+                <option value="ŞEFİN SEÇİMİ">ŞEFİN SEÇİMİ</option>
+                <option value="KLASİK">KLASİK</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group col-6">
+              <label>Nargile Aromatik İkonları (Emoji Seçin veya Yazın)</label>
+              <input type="text" id="newItemIcons" placeholder="Örn: Nane, Ice, Narenciye (Virgülle ayırın)">
+            </div>
+            <div class="form-group col-6">
+              <label>Alerjen Bilgileri</label>
+              <div class="allergen-checkboxes">
+                <label><input type="checkbox" name="allergens" value="gluten"> Gluten</label>
+                <label><input type="checkbox" name="allergens" value="lactose"> Laktoz</label>
+                <label><input type="checkbox" name="allergens" value="nuts"> Kuruyemiş</label>
+                <label><input type="checkbox" name="allergens" value="egg"> Yumurta</label>
+                <label><input type="checkbox" name="allergens" value="fish"> Balık</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">
+              <i class="fa-solid fa-floppy-disk"></i> Ürünü Menüye Kaydet
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 3: QR Code Generator -->
+    <section id="qrTab" class="tab-content">
+      <div class="form-card text-center qr-card">
+        <h3><i class="fa-solid fa-qrcode"></i> Masa QR Kod Üretici</h3>
+        <p>Müşterilerinizin cep telefonlarından menüye ulaşması için QR kod oluşturun ve yazdırın.</p>
+        
+        <div class="qr-preview-box">
+          <img id="qrImage" src="" alt="Menü QR Kodu">
+        </div>
+        
+        <div class="qr-info-url">
+          <span id="qrUrlDisplay">http://localhost:8000</span>
+        </div>
+
+        <div class="form-actions center">
+          <button id="downloadQrBtn" class="btn-primary">
+            <i class="fa-solid fa-download"></i> QR Kodu İndir (PNG)
+          </button>
+          <button id="printQrBtn" class="btn-secondary">
+            <i class="fa-solid fa-print"></i> Masa İçin Yazdır
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: PIN Security -->
+    <section id="settingsTab" class="tab-content">
+      <div class="form-card max-500">
+        <h3><i class="fa-solid fa-key"></i> Yönetici PIN Kodunu Değiştir</h3>
+        <form id="changePinForm" class="admin-form">
+          <div class="form-group">
+            <label for="oldPin">Mevcut PIN Kodu</label>
+            <input type="password" id="oldPin" required placeholder="••••">
+          </div>
+          <div class="form-group">
+            <label for="newPin">Yeni PIN Kodu (En az 4 hane)</label>
+            <input type="password" id="newPin" required placeholder="••••">
+          </div>
+          <div class="form-group">
+            <label for="newPinConfirm">Yeni PIN Kodu (Tekrar)</label>
+            <input type="password" id="newPinConfirm" required placeholder="••••">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary">
+              <i class="fa-solid fa-shield-check"></i> PIN Güncelle
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- QR Generator Script -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="/static/js/admin.js"></script>
+</body>
+</html>

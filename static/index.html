@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Anason Cafe & Bistro | Fine-Dining & Lounge QR Menü</title>
+  
+  <!-- Favicon & Fonts -->
+  <link rel="icon" type="image/png" href="/static/assets/logo_gold.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body data-theme="dark">
+
+  <!-- Ambient Luxury Glow -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <!-- Header Section (Hero, Brand, Search) -->
+  <header class="header">
+    <div class="top-bar">
+      <div class="top-actions-left">
+        <!-- Currency Switcher -->
+        <div class="currency-picker">
+          <label for="currencySelect" class="visually-hidden">Para Birimi</label>
+          <span class="live-dot" title="Canlı Döviz Kuru"></span>
+          <select id="currencySelect" aria-label="Para Birimi Seçin">
+            <option value="TRY">₺ TRY</option>
+            <option value="USD">$ USD</option>
+            <option value="EUR">€ EUR</option>
+            <option value="GBP">£ GBP</option>
+          </select>
+        </div>
+
+        <!-- Theme Switcher (Dark / Light) -->
+        <button id="themeToggleBtn" class="theme-toggle-btn" title="Gündüz / Gece Teması" aria-label="Temayı Değiştir">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+
+        <!-- Color Accent Switcher -->
+        <div class="color-palette-picker" id="palettePicker" title="Renk Paleti Seç">
+          <button class="palette-dot dot-flame active" data-palette="flame" title="Ateş & Köz (Canlı Turuncu)"></button>
+          <button class="palette-dot dot-mint" data-palette="mint" title="Taze Anason (Zümrüt Yeşili)"></button>
+          <button class="palette-dot dot-ocean" data-palette="ocean" title="Fethiye Turkuazı (Deniz Mavisi)"></button>
+        </div>
+      </div>
+
+      <div class="top-actions-right">
+        <!-- Language Switcher -->
+        <div class="language-picker">
+          <button class="lang-btn active" data-lang="tr" title="Türkçe">TR</button>
+          <button class="lang-btn" data-lang="en" title="English">EN</button>
+          <button class="lang-btn" data-lang="de" title="Deutsch">DE</button>
+          <button class="lang-btn" data-lang="ru" title="Русский">RU</button>
+          <button class="lang-btn" data-lang="ar" title="العربية">AR</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero Brand Identity -->
+    <div class="hero-brand">
+      <div class="brand-logo-container">
+        <img src="/static/assets/logo_light.png" alt="Anason Cafe & Bistro" class="brand-hero-logo theme-logo-light">
+        <img src="/static/assets/logo_dark.png" alt="Anason Cafe & Bistro" class="brand-hero-logo theme-logo-dark">
+      </div>
+      <div class="brand-subtitle-badge">HOOKAH LOUNGE & BİSTRO</div>
+      <p class="brand-tagline" data-i18n="tagline">Dumanın & Lezzetin Buluştuğu Yer</p>
+      
+      <a href="https://www.google.com/searchviewer/10?svid=CAwSHRIbCgNwdnESFENnMHZaeTh4TVhSdGJqQXdjVGRpGAo" target="_blank" rel="noopener noreferrer" class="location-badge" title="Google Haritalar ve Konum">
+        <i class="fa-solid fa-location-dot"></i> <span data-i18n="locationText">Fethiye • Erasta AVM Yanı</span>
+      </a>
+
+      <!-- Quick Action: Google Review -->
+      <a href="https://www.google.com/searchviewer/10?svid=CAwSHRIbCgNwdnESFENnMHZaeTh4TVhSdGJqQXdjVGRpGAo" target="_blank" rel="noopener noreferrer" class="hero-review-badge">
+        <div class="stars">
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+          <i class="fa-solid fa-star"></i>
+        </div>
+        <span>5.0 Google Değerlendirmesi</span>
+        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+      </a>
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="search-container">
+      <div class="search-input-box">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="searchInput" placeholder="Menüde veya lezzetlerde ara..." data-i18n-ph="searchPlaceholder" autocomplete="off">
+        <button id="clearSearchBtn" class="clear-search-btn" aria-label="Aramayı Temizle" style="display: none;">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Filter Controls: Allergen Guide & Original Menu -->
+      <div class="filter-controls">
+        <button id="allergenGuideBtn" class="pill-action-btn" title="Alerjen İkonları Rehberi">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span data-i18n="allergenGuide">Alerjen Rehberi</span>
+        </button>
+        
+        <button id="filterAllergenToggle" class="pill-action-btn">
+          <i class="fa-solid fa-filter"></i>
+          <span data-i18n="allergenFilter">Filtrele</span>
+          <i class="fa-solid fa-chevron-down toggle-arrow"></i>
+        </button>
+
+        <button id="viewOriginalMenuBtn" class="pill-action-btn gold" title="Orijinal Menü Sayfalarını Görüntüle">
+          <i class="fa-solid fa-book-open"></i>
+          <span data-i18n="viewOriginalMenu">Orijinal Menü</span>
+        </button>
+      </div>
+
+      <!-- Allergen Dropdown Panel -->
+      <div id="allergenDropdown" class="allergen-dropdown hidden">
+        <div class="allergen-tags">
+          <button class="allergen-chip" data-allergen="gluten">
+            <i class="fa-solid fa-wheat-awn"></i> <span data-i18n="allergenGluten">Glutensiz</span>
+          </button>
+          <button class="allergen-chip" data-allergen="lactose">
+            <i class="fa-solid fa-cow"></i> <span data-i18n="allergenLactose">Laktozsuz</span>
+          </button>
+          <button class="allergen-chip" data-allergen="nuts">
+            <i class="fa-solid fa-seedling"></i> <span data-i18n="allergenNuts">Kuruyemişsiz</span>
+          </button>
+          <button class="allergen-chip" data-allergen="egg">
+            <i class="fa-solid fa-egg"></i> <span data-i18n="allergenEgg">Yumurtasız</span>
+          </button>
+          <button class="allergen-chip" data-allergen="fish">
+            <i class="fa-solid fa-fish"></i> <span data-i18n="allergenFish">Balıksız</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- STRICTLY PINNED STICKY CATEGORY NAV (OUTSIDE HEADER FOR ZERO GLITCH MOBILITY) -->
+  <nav class="category-nav-wrapper" id="stickyNavWrapper">
+    <div class="category-nav" id="categoryNav">
+      <!-- Injected via JavaScript -->
+    </div>
+  </nav>
+
+  <!-- Main Menu Content Container -->
+  <main class="main-content" id="mainContent">
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Anason Cafe Lezzetleri Hazırlanıyor...</p>
+    </div>
+  </main>
+
+  <!-- Google Review & Social CTA Section -->
+  <section class="review-cta-section">
+    <div class="review-card">
+      <div class="review-sparkle">✦</div>
+      <div class="star-rating">
+        <i class="fa-solid fa-star"></i>
+        <i class="fa-solid fa-star"></i>
+        <i class="fa-solid fa-star"></i>
+        <i class="fa-solid fa-star"></i>
+        <i class="fa-solid fa-star"></i>
+      </div>
+      <h3 data-i18n="reviewHeadline">Deneyiminizi Google'da Değerlendirin!</h3>
+      <p data-i18n="reviewSub">Görüşleriniz bizim için çok değerli. 1 dakikanızı ayırıp 5 yıldızla bizi destekleyin!</p>
+      
+      <a href="https://www.google.com/searchviewer/10?svid=CAwSHRIbCgNwdnESFENnMHZaeTh4TVhSdGJqQXdjVGRpGAo" target="_blank" rel="noopener noreferrer" class="btn-review">
+        <i class="fa-brands fa-google"></i>
+        <span data-i18n="reviewBtn">Google'da Yorum Yap ⭐</span>
+      </a>
+
+      <div class="social-links">
+        <a href="https://www.instagram.com/anasoncafefethiye/" target="_blank" rel="noopener noreferrer" class="social-btn instagram">
+          <i class="fa-brands fa-instagram"></i>
+          <span>@anasoncafefethiye</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <img src="/static/assets/logo_light.png" alt="Anason Cafe" class="footer-logo theme-logo-light">
+      <img src="/static/assets/logo_dark.png" alt="Anason Cafe" class="footer-logo theme-logo-dark">
+      <p class="footer-slogan">GOOD FOOD • GOOD DRINKS • GOOD MOOD</p>
+      <p class="footer-copy" data-i18n="footerText">© 2026 Anason Cafe & Bistro • Taşyaka (Erasta AVM Yanı), Fethiye. Tüm hakları saklıdır.</p>
+      <div class="footer-address">
+        <a href="https://www.google.com/searchviewer/10?svid=CAwSHRIbCgNwdnESFENnMHZaeTh4TVhSdGJqQXdjVGRpGAo" target="_blank" rel="noopener noreferrer" class="footer-address-link" title="Haritada Görüntüle">
+          <i class="fa-solid fa-location-dot"></i> <span>Taşyaka Mah. 187. Sok. No:34 (Erasta AVM Yanı), Fethiye</span>
+        </a>
+      </div>
+      <div class="admin-link-wrapper">
+        <a href="/admin" class="admin-login-link" title="Yönetici Girişi">
+          <i class="fa-solid fa-lock"></i> <span data-i18n="adminLogin">Yönetici Girişi</span>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Floating Quick Action Button: Google Review -->
+  <a href="https://www.google.com/searchviewer/10?svid=CAwSHRIbCgNwdnESFENnMHZaeTh4TVhSdGJqQXdjVGRpGAo" target="_blank" rel="noopener noreferrer" class="floating-review-btn" title="Google'da Bizi Değerlendirin">
+    <i class="fa-solid fa-star"></i>
+    <span>Yorum Yap</span>
+  </a>
+
+  <!-- ALLERGEN GUIDE MODAL -->
+  <div id="allergenGuideModal" class="modal-overlay hidden">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-shield-halved"></i> Alerjen Bilgilendirme Rehberi</h3>
+        <button id="closeAllergenModalBtn" class="close-btn" aria-label="Kapat">&times;</button>
+      </div>
+      <div class="modal-body allergen-guide-body">
+        <p class="guide-intro">
+          Değerli misafirlerimiz; sağlığınız bizim için esastır. Türk Gıda Kodeksi ve AB 1169/2011 yönetmeliğine uygun olarak menümüzdeki ürünlerin içerdiği alerjen bileşenler aşağıdaki sembollerle belirtilmiştir. Özel bir alerjiniz varsa lütfen sipariş vermeden önce servis ekibimize bildiriniz.
+        </p>
+
+        <div class="guide-grid">
+          <div class="guide-item">
+            <div class="guide-icon"><i class="fa-solid fa-wheat-awn"></i></div>
+            <div class="guide-info">
+              <h4>Gluten (Tahıllar)</h4>
+              <p>Buğday, çavdar, arpa, yulaf, unlu mamuller, ekmek, makarna ve çıtır pane kaplamalar.</p>
+            </div>
+          </div>
+
+          <div class="guide-item">
+            <div class="guide-icon"><i class="fa-solid fa-cow"></i></div>
+            <div class="guide-info">
+              <h4>Laktoz (Süt & Süt Ürünleri)</h4>
+              <p>Peynir, tereyağı, krema sosları, yoğurt, dondurma, milkshake ve sütlü kahveler.</p>
+            </div>
+          </div>
+
+          <div class="guide-item">
+            <div class="guide-icon"><i class="fa-solid fa-egg"></i></div>
+            <div class="guide-info">
+              <h4>Yumurta</h4>
+              <p>Köy yumurtası, menemen, mayonezli burger ve dip soslar, sufle ve tatlı kremaları.</p>
+            </div>
+          </div>
+
+          <div class="guide-item">
+            <div class="guide-icon"><i class="fa-solid fa-seedling"></i></div>
+            <div class="guide-info">
+              <h4>Sert Kabuklu Yemişler (Nuts)</h4>
+              <p>Fındık, ceviz (brownie), çam fıstığı (pesto makarna), antep fıstığı ve badem.</p>
+            </div>
+          </div>
+
+          <div class="guide-item">
+            <div class="guide-icon"><i class="fa-solid fa-fish"></i></div>
+            <div class="guide-info">
+              <h4>Balık & Deniz Ürünleri</h4>
+              <p>Ton balıklı baget sandviç, geleneksel ançuez içeren Sezar salata sosu.</p>
+            </div>
+          </div>
+
+          <div class="guide-item">
+            <div class="guide-icon"><i class="fa-solid fa-jar"></i></div>
+            <div class="guide-info">
+              <h4>Susam & Hardal</h4>
+              <p>Burger ekmekleri üzeri susam tohumları, ballı hardal çıtır tavuk sosları.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Original Menu Modal (1.jpeg - 5.jpeg Viewer) -->
+  <div id="originalMenuModal" class="modal-overlay hidden">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-book-open"></i> Orijinal Basılı Menü</h3>
+        <button id="closeModalBtn" class="close-btn" aria-label="Kapat">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="menu-pages-carousel" id="menuPagesCarousel">
+          <div class="carousel-item">
+            <span class="page-tag">Sayfa 1 • Soğuk İçecekler</span>
+            <img src="/static/assets/1.jpeg" alt="Soğuk İçecekler Menüsü" loading="lazy">
+          </div>
+          <div class="carousel-item">
+            <span class="page-tag">Sayfa 2 • Kahve Menüsü</span>
+            <img src="/static/assets/2.jpeg" alt="Kahve Menüsü" loading="lazy">
+          </div>
+          <div class="carousel-item">
+            <span class="page-tag">Sayfa 3 • Kahve & Çay Menüsü</span>
+            <img src="/static/assets/3.jpeg" alt="Kahve ve Çay Menüsü" loading="lazy">
+          </div>
+          <div class="carousel-item">
+            <span class="page-tag">Sayfa 4 • Nargile Menüsü</span>
+            <img src="/static/assets/4.jpeg" alt="Nargile Menüsü" loading="lazy">
+          </div>
+          <div class="carousel-item">
+            <span class="page-tag">Sayfa 5 • Yemek Menüsü</span>
+            <img src="/static/assets/5.jpeg" alt="Yemek Menüsü" loading="lazy">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Application Logic -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
