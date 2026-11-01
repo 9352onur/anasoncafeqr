@@ -86,14 +86,18 @@
         state.currencySymbols = configRes.currencySymbols;
       }
 
-      // Restore stored Theme (Always Dark Lounge by default)
-      const savedTheme = localStorage.getItem('anason_theme');
-      if (savedTheme && ['dark', 'light'].includes(savedTheme)) {
-        state.currentTheme = savedTheme;
-      } else {
-        state.currentTheme = 'dark';
-      }
-      applyTheme(state.currentTheme);
+      // Always start with 'dark' Lounge theme by default (clear any old cached light mode)
+      let initialTheme = 'dark';
+      try {
+        localStorage.removeItem('anason_theme');
+        const sessionTheme = sessionStorage.getItem('anason_theme_session');
+        if (sessionTheme === 'light') {
+          initialTheme = 'light';
+        }
+      } catch (e) {}
+
+      state.currentTheme = initialTheme;
+      applyTheme(initialTheme);
 
       // Restore stored palette
       const savedPalette = localStorage.getItem('anason_palette') || 'flame';
@@ -130,7 +134,10 @@
   function applyTheme(theme) {
     document.body.setAttribute('data-theme', theme);
     state.currentTheme = theme;
-    localStorage.setItem('anason_theme', theme);
+    try {
+      sessionStorage.setItem('anason_theme_session', theme);
+      localStorage.removeItem('anason_theme');
+    } catch (e) {}
     if (elements.themeToggleBtn) {
       elements.themeToggleBtn.innerHTML = theme === 'dark' 
         ? '<i class="fa-solid fa-sun"></i>' 
