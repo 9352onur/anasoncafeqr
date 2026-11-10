@@ -13,7 +13,7 @@
     translations: {},
     currentLang: 'tr',
     currentCurrency: 'TRY',
-    currentTheme: 'dark',
+    currentTheme: 'light',
     currentPalette: 'flame',
     exchangeRates: { TRY: 1.0, USD: 0.02, EUR: 0.018, GBP: 0.015 },
     currencySymbols: { TRY: '₺', USD: '$', EUR: '€', GBP: '£' },
@@ -86,13 +86,13 @@
         state.currencySymbols = configRes.currencySymbols;
       }
 
-      // Always start with 'dark' Lounge theme by default (clear any old cached light mode)
-      let initialTheme = 'dark';
+      // Always start with 'light' theme by default
+      let initialTheme = 'light';
       try {
         localStorage.removeItem('anason_theme');
         const sessionTheme = sessionStorage.getItem('anason_theme_session');
-        if (sessionTheme === 'light') {
-          initialTheme = 'light';
+        if (sessionTheme === 'dark') {
+          initialTheme = 'dark';
         }
       } catch (e) {}
 
