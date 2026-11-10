@@ -180,8 +180,15 @@
 
           <div class="form-row">
             <div class="form-group col-6">
-              <label for="newItemImage">Görsel URL (Unsplash veya Fotoğraf Bağlantısı)</label>
-              <input type="url" id="newItemImage" placeholder="https://images.unsplash.com/...">
+              <label for="newItemImage">Fotoğraf (URL veya Cihazdan Yükleyin)</label>
+              <div class="image-input-flex">
+                <input type="text" id="newItemImage" placeholder="https://... veya fotoğraf seçin">
+                <label for="newItemImageFile" class="btn-file-upload" title="Telefondan veya Bilgisayardan Fotoğraf Yükle">
+                  <i class="fa-solid fa-camera"></i> Seç
+                </label>
+                <input type="file" id="newItemImageFile" accept="image/*" style="display:none">
+              </div>
+              <div id="newItemImagePreview" class="image-preview-thumb hidden"></div>
             </div>
             <div class="form-group col-6">
               <label for="newItemBadge">Öne Çıkan Rozeti</label>
@@ -271,6 +278,92 @@
         </form>
       </div>
     </section>
+  </div>
+
+  
+  <!-- Edit Item Modal -->
+  <div id="editItemModal" class="admin-modal-overlay hidden">
+    <div class="admin-modal-card">
+      <div class="admin-modal-header">
+        <h3><i class="fa-solid fa-pen-to-square"></i> Ürünü & Fotoğrafı Düzenle</h3>
+        <button id="closeEditModalBtn" class="close-modal-btn">&times;</button>
+      </div>
+      <form id="editItemForm" class="admin-form">
+        <input type="hidden" id="editItemId">
+        
+        <div class="form-row">
+          <div class="form-group col-6">
+            <label for="editItemName">Ürün Adı (Türkçe)</label>
+            <input type="text" id="editItemName" required>
+          </div>
+          <div class="form-group col-6">
+            <label for="editItemPrice">Fiyat (₺)</label>
+            <input type="text" id="editItemPrice" placeholder="Örn: 240">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-6">
+            <label for="editItemCategory">Kategori</label>
+            <select id="editItemCategory" required></select>
+          </div>
+          <div class="form-group col-6">
+            <label for="editItemSubcategory">Alt Kategori</label>
+            <input type="text" id="editItemSubcategory">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-12">
+            <label for="editItemDesc">Açıklama / İçerik</label>
+            <textarea id="editItemDesc" rows="2"></textarea>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-12">
+            <label for="editItemImage">Ürün Fotoğrafı</label>
+            <div class="image-input-flex">
+              <input type="text" id="editItemImage" placeholder="Fotoğraf linki veya sağdaki butondan yükleyin">
+              <label for="editItemImageFile" class="btn-file-upload">
+                <i class="fa-solid fa-camera"></i> Fotoğraf Seç
+              </label>
+              <input type="file" id="editItemImageFile" accept="image/*" style="display:none">
+              <button type="button" id="editRemoveImgBtn" class="btn-remove-img" title="Fotoğrafı Kaldır">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+            <div id="editImagePreview" class="image-preview-thumb"></div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-6">
+            <label for="editItemBadge">Öne Çıkan Rozeti</label>
+            <select id="editItemBadge">
+              <option value="">Rozet Yok</option>
+              <option value="ÖZEL">ÖZEL</option>
+              <option value="POPÜLER">POPÜLER</option>
+              <option value="ŞEFİN SEÇİMİ">ŞEFİN SEÇİMİ</option>
+              <option value="KLASİK">KLASİK</option>
+            </select>
+          </div>
+          <div class="form-group col-6">
+            <label for="editItemStock">Stok Durumu</label>
+            <select id="editItemStock">
+              <option value="true">Stokta Var</option>
+              <option value="false">Tükendi</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-primary">
+            <i class="fa-solid fa-check"></i> Değişiklikleri Kaydet
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div id="toastContainer" class="toast-container"></div>

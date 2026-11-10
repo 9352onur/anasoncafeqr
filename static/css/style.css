@@ -836,6 +836,53 @@ body[data-theme="dark"] .hookah-alert {
   transition: var(--transition-smooth);
 }
 
+.bistro-card.has-image {
+  padding: 0;
+  overflow: hidden;
+}
+
+.card-img-wrap {
+  width: 100%;
+  height: 180px;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+
+@media (min-width: 640px) {
+  .card-img-wrap {
+    height: 165px;
+  }
+}
+
+.card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bistro-card:hover .card-img {
+  transform: scale(1.05);
+}
+
+.bistro-card.has-image .card-content {
+  padding: 14px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-grow: 1;
+}
+
+.bistro-card:not(.has-image) .card-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  width: 100%;
+}
+
 .bistro-card:hover {
   transform: translateY(-2px);
   background: var(--bg-card-hover);

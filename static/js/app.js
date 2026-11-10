@@ -663,24 +663,34 @@
       `;
     }
 
-    const cardClasses = `bistro-card ${item.isHookah ? 'hookah-card' : ''}`;
+    const hasImage = Boolean(item.image && item.image.trim() !== '');
+    const cardClasses = `bistro-card ${item.isHookah ? 'hookah-card' : ''} ${hasImage ? 'has-image' : ''}`;
+
+    const imageHtml = hasImage ? `
+      <div class="card-img-wrap">
+        <img src="${item.image}" alt="${itemName}" class="card-img" loading="lazy" onerror="this.parentElement.style.display='none'; const c=this.closest('.bistro-card'); if(c) c.classList.remove('has-image');">
+      </div>
+    ` : '';
 
     return `
       <article class="${cardClasses}">
-        <div>
-          <div class="card-header">
-            <div class="card-title-wrap">
-              <h4 class="card-title">${itemName}</h4>
-              ${badgeHtml}
+        ${imageHtml}
+        <div class="card-content">
+          <div>
+            <div class="card-header">
+              <div class="card-title-wrap">
+                <h4 class="card-title">${itemName}</h4>
+                ${badgeHtml}
+              </div>
+              <div class="card-price ${isPriceEmpty ? 'empty' : ''}">${formattedPrice}</div>
             </div>
-            <div class="card-price ${isPriceEmpty ? 'empty' : ''}">${formattedPrice}</div>
+            ${itemDesc ? `<p class="card-desc">${itemDesc}</p>` : ''}
           </div>
-          ${itemDesc ? `<p class="card-desc">${itemDesc}</p>` : ''}
-        </div>
-        <div>
-          ${hookahMetersHtml}
-          ${flavorHtml}
-          ${allergensHtml}
+          <div>
+            ${hookahMetersHtml}
+            ${flavorHtml}
+            ${allergensHtml}
+          </div>
         </div>
       </article>
     `;

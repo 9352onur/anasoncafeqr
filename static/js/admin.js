@@ -27,6 +27,26 @@
 
   const addItemForm = document.getElementById('addItemForm');
   const newItemCategory = document.getElementById('newItemCategory');
+  const newItemImage = document.getElementById('newItemImage');
+  const newItemImageFile = document.getElementById('newItemImageFile');
+  const newItemImagePreview = document.getElementById('newItemImagePreview');
+
+  // Edit Modal Elements
+  const editItemModal = document.getElementById('editItemModal');
+  const closeEditModalBtn = document.getElementById('closeEditModalBtn');
+  const editItemForm = document.getElementById('editItemForm');
+  const editItemId = document.getElementById('editItemId');
+  const editItemName = document.getElementById('editItemName');
+  const editItemPrice = document.getElementById('editItemPrice');
+  const editItemCategory = document.getElementById('editItemCategory');
+  const editItemSubcategory = document.getElementById('editItemSubcategory');
+  const editItemDesc = document.getElementById('editItemDesc');
+  const editItemImage = document.getElementById('editItemImage');
+  const editItemImageFile = document.getElementById('editItemImageFile');
+  const editImagePreview = document.getElementById('editImagePreview');
+  const editRemoveImgBtn = document.getElementById('editRemoveImgBtn');
+  const editItemBadge = document.getElementById('editItemBadge');
+  const editItemStock = document.getElementById('editItemStock');
 
   const changePinForm = document.getElementById('changePinForm');
   const qrImage = document.getElementById('qrImage');
@@ -47,23 +67,78 @@
     }, 2500);
   }
 
-  // Check initial PIN
-  if (currentPin) {
-    verifyAndUnlock(currentPin);
-  } else {
-    pinOverlay.classList.remove('hidden');
-    dashboardApp.classList.add('hidden');
+  // Image compressor helper (max 800px, 0.82 jpeg)
+  function compressImageFile(file, maxWidth = 800, quality = 0.82) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let w = img.width;
+          let h = img.height;
+          if (w > maxWidth) {
+            h = Math.round((h * maxWidth) / w);
+            w = maxWidth;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
 
-  // PIN Form Submission
+  function updatePreview(container, src) {
+    if (!container) return;
+    if (src && src.trim() !== '') {
+      container.innerHTML = `<img src="${src}" alt="Önizleme" onerror="this.remove()">`;
+      container.classList.remove('hidden');
+    } else {
+      container.innerHTML = '';
+      container.classList.add('hidden');
+    }
+  }
+
+  // Bind New Item File Upload
+  if (newItemImageFile) {
+    newItemImageFile.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const dataUrl = await compressImageFile(file);
+        if (newItemImage) newItemImage.value = dataUrl;
+        updatePreview(newItemImagePreview, dataUrl);
+        showToast('Fotoğraf başarıyla yüklendi!');
+      } catch (err) {
+        showToast('Fotoğraf işlenemedi.');
+      }
+    });
+  }
+
+  if (newItemImage) {
+    newItemImage.addEventListener('input', () => {
+      updatePreview(newItemImagePreview, newItemImage.value.trim());
+    });
+  }
+
+  // Check initial PIN
+  if (currentPin) {
+    verifyStoredPin(currentPin);
+  }
+
+  // PIN Form Submit
   pinForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const enteredPin = pinInput.value.trim();
-    if (!enteredPin) return;
-    await verifyAndUnlock(enteredPin);
-  });
+    const pin = pinInput.value.trim();
+    if (!pin) return;
 
-  async function verifyAndUnlock(pin) {
     try {
       const res = await fetch('/api/admin/verify-pin', {
         method: 'POST',
@@ -88,15 +163,32 @@
       pinError.textContent = 'Bağlantı hatası oluştu.';
       pinError.classList.remove('hidden');
     }
+  });
+
+  async function verifyStoredPin(pin) {
+    try {
+      const res = await fetch('/api/admin/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin })
+      });
+
+      if (res.ok) {
+        pinOverlay.classList.add('hidden');
+        dashboardApp.classList.remove('hidden');
+        loadDashboard();
+      } else {
+        sessionStorage.removeItem('anason_admin_pin');
+      }
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   // Logout
   logoutBtn.addEventListener('click', () => {
     sessionStorage.removeItem('anason_admin_pin');
-    currentPin = '';
-    pinOverlay.classList.remove('hidden');
-    dashboardApp.classList.add('hidden');
-    pinInput.value = '';
+    window.location.reload();
   });
 
   // Tab Navigation
@@ -104,13 +196,13 @@
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      
+
       btn.classList.add('active');
-      const targetId = btn.getAttribute('data-tab');
-      const targetContent = document.getElementById(targetId);
+      const tabId = btn.getAttribute('data-tab');
+      const targetContent = document.getElementById(tabId);
       if (targetContent) targetContent.classList.add('active');
 
-      if (targetId === 'qrTab') {
+      if (tabId === 'qrTab') {
         generateMenuQr();
       }
     });
@@ -121,61 +213,71 @@
     try {
       const [menuRes, ratesRes] = await Promise.all([
         fetch('/api/menu').then(r => r.json()),
-        fetch('/api/rates').then(r => r.json())
+        fetch('/api/rates').then(r => r.json()).catch(() => null)
       ]);
 
       menuData = menuRes;
       updateStats(ratesRes);
-      populateCategoryDropdowns();
-      renderTable();
+      populateCategoryFilters();
+      renderItemsTable();
     } catch (err) {
-      console.error(err);
-      showToast('Veriler yüklenirken hata oluştu.');
+      console.error('Error loading dashboard:', err);
+      showToast('Menü verileri yüklenemedi.');
     }
   }
 
-  function updateStats(ratesRes) {
-    totalItemsCount.textContent = menuData.items.length;
-    const hookahCount = menuData.items.filter(i => i.categoryId === 'nargile' || i.isHookah).length;
-    hookahItemsCount.textContent = hookahCount;
+  // Update Stats & Rate Summary
+  function updateStats(ratesData) {
+    const total = menuData.items ? menuData.items.length : 0;
+    const hookah = menuData.items ? menuData.items.filter(i => i.isHookah).length : 0;
 
-    if (ratesRes && ratesRes.rates) {
-      const usd = (1 / ratesRes.rates.USD).toFixed(2);
-      const eur = (1 / ratesRes.rates.EUR).toFixed(2);
-      liveRatesSummary.textContent = `1$ ≈ ${usd}₺ | 1€ ≈ ${eur}₺`;
+    if (totalItemsCount) totalItemsCount.textContent = total;
+    if (hookahItemsCount) hookahItemsCount.textContent = hookah;
+
+    if (liveRatesSummary && ratesData && ratesData.rates) {
+      const r = ratesData.rates;
+      const usdTry = r.USD ? (1 / r.USD).toFixed(2) : '--';
+      const eurTry = r.EUR ? (1 / r.EUR).toFixed(2) : '--';
+      liveRatesSummary.innerHTML = `<strong>1$</strong>: ${usdTry}₺ | <strong>1€</strong>: ${eurTry}₺`;
     }
   }
 
-  function populateCategoryDropdowns() {
-    // Admin filter
+  // Populate Categories
+  function populateCategoryFilters() {
+    if (!menuData.categories) return;
+
+    // Filter Dropdown
     adminCategoryFilter.innerHTML = '<option value="all">Tüm Kategoriler</option>';
-    newItemCategory.innerHTML = '';
-
     menuData.categories.forEach(cat => {
       const opt = document.createElement('option');
       opt.value = cat.id;
-      opt.textContent = `${cat.icon || ''} ${cat.name}`;
+      opt.textContent = `${cat.name} (${menuData.items.filter(i => i.categoryId === cat.id).length})`;
       adminCategoryFilter.appendChild(opt);
+    });
 
-      const addOpt = opt.cloneNode(true);
-      newItemCategory.appendChild(addOpt);
+    // Add Item Category Select
+    newItemCategory.innerHTML = '';
+    menuData.categories.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat.id;
+      opt.textContent = cat.name;
+      newItemCategory.appendChild(opt);
     });
   }
 
-  // Filter & Search Events
-  adminSearchInput.addEventListener('input', renderTable);
-  adminCategoryFilter.addEventListener('change', renderTable);
+  // Render Items Table
+  function renderItemsTable() {
+    const q = adminSearchInput.value.trim().toLowerCase();
+    const cat = adminCategoryFilter.value;
 
-  function renderTable() {
-    const q = adminSearchInput.value.toLowerCase();
-    const selCat = adminCategoryFilter.value;
+    let filtered = menuData.items || [];
 
-    const filtered = menuData.items.filter(it => {
-      if (selCat !== 'all' && it.categoryId !== selCat) return false;
+    filtered = filtered.filter(it => {
+      if (cat !== 'all' && it.categoryId !== cat) return false;
       if (q) {
-        const match = (it.name && it.name.toLowerCase().includes(q)) ||
-                      (it.subcategory && it.subcategory.toLowerCase().includes(q));
-        if (!match) return false;
+        const nameMatch = it.name && it.name.toLowerCase().includes(q);
+        const subcatMatch = it.subcategory && it.subcategory.toLowerCase().includes(q);
+        return nameMatch || subcatMatch;
       }
       return true;
     });
@@ -193,11 +295,11 @@
 
       tr.innerHTML = `
         <td>
-          <img src="${it.image || '/static/assets/4.jpeg'}" class="item-thumb" alt="${it.name}">
+          <img src="${it.image || '/static/assets/4.jpeg'}" class="item-thumb" data-id="${it.id}" alt="${it.name}" title="Fotoğrafı düzenlemek için tıkla">
         </td>
         <td>
           <strong>${it.name}</strong>
-          ${it.isHookah && it.icons ? `<div style="font-size:0.75rem; color:#d4af37;">${it.icons.join(' ')}</div>` : ''}
+          ${it.isHookah && it.icons ? `<div style="font-size:0.75rem; color:#ff7d54;">${it.icons.join(' ')}</div>` : ''}
         </td>
         <td>${categoryObj.name}</td>
         <td><small style="color:#aaa;">${it.subcategory || '-'}</small></td>
@@ -213,6 +315,9 @@
           </button>
         </td>
         <td>
+          <button class="action-btn edit-item" data-id="${it.id}" title="Ürünü ve Fotoğrafı Düzenle">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
           <button class="action-btn delete" data-id="${it.id}" title="Ürünü Sil">
             <i class="fa-solid fa-trash"></i>
           </button>
@@ -222,9 +327,22 @@
       adminTableBody.appendChild(tr);
     });
 
+    // Edit Item Modal triggers
+    adminTableBody.querySelectorAll('.action-btn.edit-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        openEditModal(btn.getAttribute('data-id'));
+      });
+    });
+
+    adminTableBody.querySelectorAll('.item-thumb').forEach(img => {
+      img.addEventListener('click', () => {
+        openEditModal(img.getAttribute('data-id'));
+      });
+    });
+
     // Delete buttons
     adminTableBody.querySelectorAll('.action-btn.delete').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
+      btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
         if (!confirm('Bu ürünü silmek istediğinize emin misiniz?')) return;
         await deleteItem(id);
@@ -240,6 +358,99 @@
         item.isAvailable = !(item.isAvailable !== false);
         await saveItemUpdate(item);
       });
+    });
+  }
+
+  // Open Edit Item Modal
+  function openEditModal(itemId) {
+    const item = menuData.items.find(i => i.id === itemId);
+    if (!item) return;
+
+    if (editItemId) editItemId.value = item.id;
+    if (editItemName) editItemName.value = item.name || '';
+    if (editItemPrice) editItemPrice.value = item.price || '';
+    if (editItemSubcategory) editItemSubcategory.value = item.subcategory || '';
+    if (editItemDesc) editItemDesc.value = item.description || '';
+    if (editItemImage) editItemImage.value = item.image || '';
+    if (editItemBadge) editItemBadge.value = item.badge || '';
+    if (editItemStock) editItemStock.value = String(item.isAvailable !== false);
+
+    // Populate category dropdown
+    if (editItemCategory) {
+      editItemCategory.innerHTML = menuData.categories.map(c => 
+        `<option value="${c.id}" ${c.id === item.categoryId ? 'selected' : ''}>${c.name}</option>`
+      ).join('');
+    }
+
+    updatePreview(editImagePreview, item.image);
+    if (editItemModal) editItemModal.classList.remove('hidden');
+  }
+
+  if (closeEditModalBtn) {
+    closeEditModalBtn.addEventListener('click', () => {
+      editItemModal.classList.add('hidden');
+    });
+  }
+
+  if (editItemModal) {
+    editItemModal.addEventListener('click', (e) => {
+      if (e.target === editItemModal) {
+        editItemModal.classList.add('hidden');
+      }
+    });
+  }
+
+  // Edit Item File Upload
+  if (editItemImageFile) {
+    editItemImageFile.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const dataUrl = await compressImageFile(file);
+        if (editItemImage) editItemImage.value = dataUrl;
+        updatePreview(editImagePreview, dataUrl);
+        showToast('Fotoğraf güncellendi!');
+      } catch (err) {
+        showToast('Fotoğraf işlenemedi.');
+      }
+    });
+  }
+
+  if (editRemoveImgBtn) {
+    editRemoveImgBtn.addEventListener('click', () => {
+      if (editItemImage) editItemImage.value = '';
+      updatePreview(editImagePreview, '');
+      showToast('Fotoğraf kaldırıldı.');
+    });
+  }
+
+  if (editItemImage) {
+    editItemImage.addEventListener('input', () => {
+      updatePreview(editImagePreview, editItemImage.value.trim());
+    });
+  }
+
+  // Submit Edit Item Form
+  if (editItemForm) {
+    editItemForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = editItemId.value;
+      const item = menuData.items.find(i => i.id === id);
+      if (!item) return;
+
+      item.name = editItemName.value.trim();
+      item.price = editItemPrice.value.trim();
+      item.categoryId = editItemCategory.value;
+      item.subcategory = editItemSubcategory.value.trim();
+      item.description = editItemDesc.value.trim();
+      item.image = editItemImage.value.trim();
+      item.badge = editItemBadge.value;
+      item.isAvailable = editItemStock.value === 'true';
+
+      await saveItemUpdate(item);
+      editItemModal.classList.add('hidden');
+      loadDashboard();
+      showToast('Ürün ve fotoğraf başarıyla güncellendi!');
     });
   }
 
@@ -274,13 +485,13 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ item, pin: currentPin })
       });
-      if (res.ok) {
-        showToast('Ürün durumu güncellendi.');
-        renderTable();
+
+      if (!res.ok) {
+        showToast('Güncelleme başarısız!');
       }
     } catch (err) {
       console.error(err);
-      showToast('Güncelleme sırasında hata oluştu.');
+      showToast('Bağlantı hatası.');
     }
   }
 
@@ -291,11 +502,12 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin: currentPin })
       });
+
       if (res.ok) {
-        showToast('Ürün silindi.');
-        menuData.items = menuData.items.filter(i => i.id !== id);
-        renderTable();
-        totalItemsCount.textContent = menuData.items.length;
+        showToast('Ürün başarıyla silindi.');
+        loadDashboard();
+      } else {
+        showToast('Silme işlemi başarısız.');
       }
     } catch (err) {
       console.error(err);
@@ -348,6 +560,7 @@
       if (res.ok) {
         showToast('Yeni ürün menüye başarıyla eklendi!');
         addItemForm.reset();
+        if (newItemImagePreview) updatePreview(newItemImagePreview, '');
         // Switch to menu tab
         document.querySelector('.tab-btn[data-tab="menuTab"]').click();
         loadDashboard();
@@ -393,6 +606,10 @@
       alert('Bağlantı hatası.');
     }
   });
+
+  // Search & Filter Listeners
+  adminSearchInput.addEventListener('input', renderItemsTable);
+  adminCategoryFilter.addEventListener('change', renderItemsTable);
 
   // Generate Menu QR Code
   function generateMenuQr() {
